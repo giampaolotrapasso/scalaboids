@@ -3,12 +3,14 @@ package com.giampaolotrapasso.boids
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
 import scala.language.postfixOps
+import scala.util.Random
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.scene.canvas.Canvas
 import scalafx.scene.image.ImageView
-import scalafx.scene.paint.Color
-import scalafx.scene.shape.Circle
+import scalafx.scene.paint.{Color, Paint}
+import scalafx.scene.shape.{Circle, Line}
 import scalafx.scene.{Group, Scene}
 
 object ScalaBoids extends JFXApp {
@@ -53,17 +55,35 @@ object ScalaBoids extends JFXApp {
       display.setCache(true)
       display.setRotate(0.0)
 
-      Boid(initialPosition, initialVelocity, initialAngle, display, worldSize)
+
+      Boid(initialPosition, initialVelocity, initialAngle, display, worldSize, boidShape(randomColor))
     }, worldSize)
 
+  def randomColor(): Color = {
+    Color.apply(Random.nextDouble, Random.nextDouble, Random.nextDouble, 1.0)
+  }
 
   def pongComponents: Group = new Group {
     flock = Flock(flock.updatedBoidsPosition(), worldSize)
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
-    children = flock.images :+ point :+ centroid
+    children = flock.canvas :+ point :+ centroid
     //println(s" ${flock.images(0).getX}, ${flock.images(0).getY}")
+  }
+
+
+
+  def boidShape(color: Color) = {
+    val g = new Group
+    val c = Circle(7, color)
+
+    val m = Line(7, 0, 10, 0)
+    m.strokeWidth = 2
+    m.stroke = color
+
+    g.children = List(c , m)
+    g
   }
 
 

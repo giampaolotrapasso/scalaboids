@@ -2,9 +2,12 @@ package com.giampaolotrapasso.boids
 
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
+import scalafx.scene.Group
+import scalafx.scene.canvas.Canvas
 import scalafx.scene.image.{Image, ImageView}
+import scalafx.scene.shape.{Circle, Shape}
 
-case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: ImageView, worldSize: WorldSize) {
+case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: ImageView, worldSize: WorldSize, circle: Group) {
   def nextPosition = position.add(velocity).add(Vector2D(worldSize.width, worldSize.height)).module(worldSize.width, worldSize.height)
 
   def minTimeOfCollision(anotherBoid: Boid) = {
