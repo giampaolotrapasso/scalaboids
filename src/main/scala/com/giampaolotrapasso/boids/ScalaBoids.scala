@@ -36,7 +36,7 @@ object ScalaBoids extends JFXApp {
   }.divide(flock.boids.size)
 
   private var flock = new Flock(
-    Range(0, 30).map { _ =>
+    Range(0, 10).map { _ =>
       val x = scala.util.Random.nextDouble * width + 1
       val y = scala.util.Random.nextDouble * height + 1
 

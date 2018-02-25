@@ -11,7 +11,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
 
   private val movementFactor = 1000
   private val boundingFactor = 10
-  private val separationDistance = 10
+  private val separationDistance = 15
   private val separationFactor = 200
 
 
@@ -31,6 +31,9 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     theta * 180 / Math.PI
   }
 
+
+
+
   def updatedBoidsPosition(): Seq[Boid] = {
     val center: Vector2D = boids.map(_.position).fold(Vector2D(0.0, 0.0)) {
       (sum, element) => sum + element
@@ -39,8 +42,11 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     boids.map { boid =>
 
 
+      val perceivedCenterOfMass = calculatePerceivedCenterOfMass(boids, boid)
+      val avoidOthers = avoidOtherBoids(boids, boid)
+      val matchVelocity = matchOthersVelocity(boids, boid)
 
-      val newVelocity: Vector2D = boid.velocity
+      val newVelocity: Vector2D = boid.velocity + perceivedCenterOfMass + avoidOthers + matchVelocity
       val nextPosition = boid.position.add(newVelocity).add(worldSize.toVector2D).normalize(worldSize.width, worldSize.height)
 
       val angle = setAngle(boid.position, nextPosition)
@@ -70,11 +76,33 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     }
   }
 
+  def calculatePerceivedCenterOfMass(boids: Seq[Boid], boid: Boid) = {
+    val l = boids.filter(b => b != boid).map(_.position).fold(Vector2D.zero)((v1, v2) => v1 + v2)
+    val m = l.divide(boids.size - 1)
+
+    (m - boid.position) / 100
+  }
+
+  def avoidOtherBoids(boids: Seq[Boid], boid: Boid): Vector2D = {
+    var start = Vector2D.zero
+
+    boids.filter(b => b != boid).map(_.position).foreach { position =>
+      if (((Math.abs(position.x - boid.position.x)) < separationDistance) &&
+        ((Math.abs(position.y - boid.position.y)) < separationDistance))
+        start = start - (boid.position - position)
+    }
+    start
+  }
+
+  def matchOthersVelocity(boids: Seq[Boid], boid: Boid) = {
+    val l = boids.filter(b => b != boid).map(_.velocity).fold(Vector2D.zero)((v1, v2) => v1 + v2)
+    val m = l.divide(boids.size - 1)
+    (m - boid.velocity) / 8
+  }
+
   def images = boids.map(_.display)
 
   def canvas = boids.map(_.circle)
-
-
 
 
 }
