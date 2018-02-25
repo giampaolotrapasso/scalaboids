@@ -1,6 +1,6 @@
 package com.giampaolotrapasso.boids
 
-import com.giampaolotrapasso.boids.utility.Vector2D
+import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
 import scala.language.postfixOps
 import scalafx.animation.AnimationTimer
@@ -15,8 +15,9 @@ object ScalaBoids extends JFXApp {
 
   private val initialAngle = 0.0
 
-  val width = 1200.0
-  val height = 800.0
+  val width = 300.0
+  val height = 300.0
+  val worldSize = WorldSize(width.toInt, height.toInt)
 
   private val point = scalafx.scene.shape.Circle(width/2, height /2, 4)
 
@@ -33,15 +34,16 @@ object ScalaBoids extends JFXApp {
   }.divide(flock.boids.size)
 
   private var flock = new Flock(
-    Range(0, 40).map { _ =>
+    Range(0, 10).map { _ =>
       val x = scala.util.Random.nextDouble * width + 1
       val y = scala.util.Random.nextDouble * height + 1
 
-      val xVelocity = scala.util.Random.nextDouble() * 4.0 - 2.0
-      val yVelocity = scala.util.Random.nextDouble() * 4.0 - 2.0
+      val xVelocity = (scala.util.Random.nextDouble()*0.8+0.2)*(if (scala.util.Random.nextBoolean()) 1 else -1)
+      val yVelocity = (scala.util.Random.nextDouble()*0.8+0.2)*(if (scala.util.Random.nextBoolean()) 1 else -1)
 
       val initialPosition = Vector2D(x, y)
       val initialVelocity = Vector2D(xVelocity, yVelocity)
+
 
       val display: ImageView = new ImageView(Boid.image)
       display.setImage(Boid.image)
@@ -51,12 +53,12 @@ object ScalaBoids extends JFXApp {
       display.setCache(true)
       display.setRotate(0.0)
 
-      Boid(initialPosition, initialVelocity, initialAngle, display)
-    }, width, height)
+      Boid(initialPosition, initialVelocity, initialAngle, display, worldSize)
+    }, worldSize)
 
 
   def pongComponents: Group = new Group {
-    flock = Flock(flock.updatedBoidsPosition(), width, height)
+    flock = Flock(flock.updatedBoidsPosition(), worldSize)
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
