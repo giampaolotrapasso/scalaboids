@@ -9,7 +9,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
 
   private val movementFactor = 1000
   private val boundingFactor = 10
-  private val separationDistance = 20
+  private val separationDistance = 10
   private val separationFactor = 200
 
 
@@ -37,21 +37,18 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     boids.map { boid =>
       val group = positionTend(boid, center, factor = movementFactor)
       //val bounds = bounding(boid)
-      val avoid = collisionAvoidance(boid)
+      val avoid = collisionCheck2(boid)
+      val overlap = collisionAvoidance(boid)
       val tend = positionTend(boid, worldSize.center, factor = tendFactor)
       val matchVelocity = matchFlockVelocity(boid)
-      val sum = avoid
+      val sum = avoid * 0.4 + overlap *0.3 + tend * 0.2 + tend * 0.2
 
       // println(s"G $group B: $bounds")
       //+ collisionAvoidance(boid) + matchFlockVelocity(boid)  +
 
-      val newVelocity: Vector2D = boid.velocity.add(avoid).normalize
-      if (newVelocity.x == 0 && newVelocity.y == 0)
-        println("qui "+ boid.velocity + " " + avoid)
-
+      val newVelocity: Vector2D = boid.velocity.add(sum).normalize
       val nextPosition = boid.position.add(newVelocity).add(worldSize.toVector2D).normalize(worldSize.width, worldSize.height)
-      if (nextPosition == boid.position)
-        println("qui2 "+ boid.velocity + " " + avoid)
+
       val angle = setAngle(boid.position, nextPosition)
 
       val display = boid.display
@@ -89,7 +86,24 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
         val xD = new Vector2D(aPosition.x - cPosition.x, aPosition.y - cPosition.y)
         if (Math.abs(xD.x) < separationDistance && Math.abs(xD.y) < separationDistance) {
           count = count + 1
-          correction = correction.sub(xD).divide(separationDistance)
+          correction = correction.sub(xD).divide(separationDistance*4)
+        }
+      }
+    }
+    correction
+  }
+
+  private def collisionAvoidance2(cBoid: Boid): Vector2D = {
+    var correction = new Vector2D
+    var count = 0
+    val cPosition = cBoid.nextPosition.copy()
+    for (aBoid <- boids) {
+      if (!(aBoid == cBoid)) {
+        val aPosition = aBoid.nextPosition
+        val xD = new Vector2D(aPosition.x - cPosition.x, aPosition.y - cPosition.y)
+        if (Math.abs(xD.x) < separationDistance && Math.abs(xD.y) < separationDistance) {
+          count = count + 1
+          correction = cBoid.velocity.rotate(Math.PI/8.0)-cBoid.velocity
         }
       }
     }
@@ -125,21 +139,24 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
 
     closest.flatMap{v =>
 
-      val closestBoid = v._1
-      val closestDistance = v._2
 
-      val correction = cBoid.velocity.divide(5)
-      val leftBoid = cBoid.copy(velocity = cBoid.velocity - correction)
-      val rightBoid = cBoid.copy(velocity = cBoid.velocity + correction)
+
+      val l = Range(0, 10, 1)
+        .map( x =>  x * Math.PI / 180.0)
+        .map(angle => (angle, cBoid.copy(velocity = cBoid.velocity.rotate(angle)).minDistance(v._1)))
+        .collect { case (x, Some(d)) => (x,d) }
+        .sortWith((x, y) => x._2 > y._2)
+
+
+
+
+
 
       for {
-        a <- closestBoid.minDistance(leftBoid)
-        b <- closestBoid.minDistance(rightBoid)
-
-      } yield if (a < b)
-          correction.multiply(-1)
-        else
-          correction
+        (angle, distance) <- l.headOption
+        newBoid = cBoid.copy(velocity = cBoid.velocity.rotate(angle))
+      } yield
+          cBoid.velocity - newBoid.velocity
       }
     .getOrElse(Vector2D.zero)
   }

@@ -15,15 +15,15 @@ object ScalaBoids extends JFXApp {
 
   private val initialAngle = 0.0
 
-  val width = 300.0
-  val height = 300.0
+  val width = 600.0
+  val height = 600.0
   val worldSize = WorldSize(width.toInt, height.toInt)
 
   private val point = scalafx.scene.shape.Circle(width/2, height /2, 4)
 
   private val centroid = new Circle {
-    centerX = 600
-    centerY = 400
+    centerX = worldSize.center.x
+    centerY = worldSize.center.y
     radius = 2
     strokeWidth = 2
     fill = Color.IndianRed
@@ -34,7 +34,7 @@ object ScalaBoids extends JFXApp {
   }.divide(flock.boids.size)
 
   private var flock = new Flock(
-    Range(0, 10).map { _ =>
+    Range(0, 30).map { _ =>
       val x = scala.util.Random.nextDouble * width + 1
       val y = scala.util.Random.nextDouble * height + 1
 

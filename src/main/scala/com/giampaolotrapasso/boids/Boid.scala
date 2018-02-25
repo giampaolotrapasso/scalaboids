@@ -38,7 +38,7 @@ case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: 
 
     val mt = minTimeOfCollision(anotherBoid)
 
-    if (mt > 0 && mt < 30) {
+    if (mt > 0 && mt < 20) {
 
       val w = (mt * xat - mt * xbt + xa0 - xb0)
       val v = (mt * yat - mt * ybt + ya0 - yb0)

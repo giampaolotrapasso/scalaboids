@@ -8,6 +8,8 @@ case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
 
   def +(other: Vector2D) = add(other)
 
+  def *(double: Double) = multiply(double)
+
   def sub(other: Vector2D) = Vector2D(this.x - other.x, this.y - other.y)
 
   def -(other: Vector2D) = sub(other)
@@ -42,6 +44,12 @@ case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
     y = (y.toInt % yModule)
   )
 
+  def rotate(angle: Double) = Vector2D(
+    x = x *Math.cos(angle) - y *Math.sin(angle),
+    y = x *Math.sin(angle) + y * Math.cos(angle)
+  )
+
+
 
   def normalize = {
 
@@ -61,7 +69,6 @@ case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
     def isNormal(vector2D: Vector2D) = vector2D.x < normX && vector2D.x > -normX && vector2D.y < normY && vector2D.y > -normY
 
     if (isNormal(this)) {
-      println("x,y= " + this.x + ", " + this.y)
       this
     }
     else {
