@@ -2,36 +2,28 @@ package com.giampaolotrapasso.boids
 
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
-import scala.util.Random
-import scalafx.scene.canvas.Canvas
-import scalafx.scene.image.ImageView
-import scalafx.scene.shape.Shape
-
-case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
+case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double) {
 
   private val movementFactor = 1000
   private val boundingFactor = 10
-  private val separationDistance = 15
+  private val separationDistance = 20
   private val separationFactor = 200
-
 
   private val tendFactor = 5000
 
 
-  private val maxVelocity = 1.0
+
 
   private val matchFlockFactor = 8.0
 
 
-  private def setAngle(current: Vector2D, next: Vector2D): Double = {
+  private def getNextAngle(current: Vector2D, next: Vector2D): Double = {
     val dX = next.x - current.x
     val dY = next.y - current.y
     val theta = Math.atan2(dY, dX)
     // Change this.angle is into degrees
     theta * 180 / Math.PI
   }
-
-
 
 
   def updatedBoidsPosition(): Seq[Boid] = {
@@ -45,18 +37,20 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
       val perceivedCenterOfMass = calculatePerceivedCenterOfMass(boids, boid)
       val avoidOthers = avoidOtherBoids(boids, boid)
       val matchVelocity = matchOthersVelocity(boids, boid)
+      val tend = tendToPlace(boid)
 
-      val newVelocity: Vector2D = boid.velocity + perceivedCenterOfMass + avoidOthers + matchVelocity
-      val nextPosition = boid.position.add(newVelocity).add(worldSize.toVector2D).normalize(worldSize.width, worldSize.height)
+      val unlimitedVelocity: Vector2D =
+        boid.velocity +
+        perceivedCenterOfMass * 0.0005 +
+        avoidOthers * 0.01 +
+        matchVelocity  * 0.4 +
+        tend * 0.001
 
-      val angle = setAngle(boid.position, nextPosition)
 
-      val display = boid.display
-      display.setX(nextPosition.x)
-      display.setY(nextPosition.y)
-      display.setSmooth(true)
-      display.setCache(true)
-      display.setRotate(angle)
+      val limitedVelocity = limitVelocity(unlimitedVelocity)
+      val nextPosition = boid.position.add(limitedVelocity)
+
+      val angle = getNextAngle(boid.position, nextPosition)
 
       val circle = boid.circle
       circle.setCache(true)
@@ -65,14 +59,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
       circle.layoutY = nextPosition.y
 
 
-      Boid(
-        position = nextPosition,
-        velocity = newVelocity,
-        angle = angle,
-        display = display,
-        worldSize = worldSize,
-        circle = circle
-      )
+      Boid(position = nextPosition, velocity = unlimitedVelocity, angle = angle, worldSize = worldSize, circle = circle)
     }
   }
 
@@ -87,9 +74,8 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     var start = Vector2D.zero
 
     boids.filter(b => b != boid).map(_.position).foreach { position =>
-      if (((Math.abs(position.x - boid.position.x)) < separationDistance) &&
-        ((Math.abs(position.y - boid.position.y)) < separationDistance))
-        start = start - (boid.position - position)
+      if ((position - boid.position).norm < separationDistance)
+        start = start - (position - boid.position)/ 10.0
     }
     start
   }
@@ -100,7 +86,39 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize) {
     (m - boid.velocity) / 8
   }
 
-  def images = boids.map(_.display)
+  def tendToPlace(boid: Boid) = {
+    val place = Vector2D(300, 300)
+    (place - boid.position) / 100
+  }
+
+
+  def limitVelocity(velocity: Vector2D) = {
+    if (velocity.norm < minVelocity)
+      (velocity / velocity.norm) * minVelocity else
+    if (velocity.norm > maxVelocity)
+      (velocity / velocity.norm) * maxVelocity
+    else velocity
+  }
+
+
+  def boundPosition(position: Vector2D) = {
+    var v = position
+
+    if (position.x < worldSize.minX + 10)
+      v = v.copy(x = v.x + 1)
+
+    if (position.x > worldSize.maxX - 10)
+      v = v.copy(x = v.x - 1)
+
+
+    if (position.y < worldSize.minY + 10)
+      v = v.copy(y = v.y + 1)
+
+    if (position.x > worldSize.maxY - 10)
+      v = v.copy(y = v.y - 1)
+
+    v
+  }
 
   def canvas = boids.map(_.circle)
 

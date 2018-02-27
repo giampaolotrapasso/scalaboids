@@ -1,7 +1,9 @@
 package com.giampaolotrapasso.boids.utility
 
-case class WorldSize(width: Int, height: Int) {
-  def toVector2D = Vector2D(width, height)
+case class WorldSize(minX: Double, minY: Double, maxX: Double, maxY: Double) {
 
-  def center = Vector2D(width/2, height/2)
+  def center = Vector2D((minX+maxY)/2, (minY+maxY)/2)
+
+  def width = minX+maxX
+  def height = minY+maxY
 }

@@ -3,14 +3,10 @@ package com.giampaolotrapasso.boids
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
 import scalafx.scene.Group
-import scalafx.scene.canvas.Canvas
-import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.shape.{Circle, Shape}
 
-case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: ImageView, worldSize: WorldSize, circle: Group) {
-  def nextPosition = position.add(velocity).add(Vector2D(worldSize.width, worldSize.height)).module(worldSize.width, worldSize.height)
+case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, worldSize: WorldSize, circle: Group) {
 
-  def minTimeOfCollision(anotherBoid: Boid) = {
+  private def minTimeOfCollision(anotherBoid: Boid) = {
     val xa0 = position.x
     val xat = velocity.x
     val ya0 = position.y
@@ -27,7 +23,7 @@ case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: 
     mintime
   }
 
-  def minDistance(anotherBoid: Boid) : Option[Double] = {
+  private def minDistance(anotherBoid: Boid) : Option[Double] = {
 
     val xa0 = position.x
     val xat = velocity.x
@@ -49,13 +45,5 @@ case class Boid(position: Vector2D, velocity: Vector2D, angle: Double, display: 
       Some(Math.sqrt(w * w + v * v))
     } else None
   }
-
-}
-
-
-object Boid {
-
-  val image = new Image("images/boid.png")
-
 
 }

@@ -7,9 +7,7 @@ import scala.util.Random
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
-import scalafx.scene.canvas.Canvas
-import scalafx.scene.image.ImageView
-import scalafx.scene.paint.{Color, Paint}
+import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
 import scalafx.scene.{Group, Scene}
 
@@ -19,7 +17,9 @@ object ScalaBoids extends JFXApp {
 
   val width = 600.0
   val height = 600.0
-  val worldSize = WorldSize(width.toInt, height.toInt)
+  val worldSize = WorldSize(0, 0, width, height)
+  private val maxVelocity = 5.0
+  private val minVelocity = 4.0
 
   private val point = scalafx.scene.shape.Circle(width/2, height /2, 4)
 
@@ -40,36 +40,25 @@ object ScalaBoids extends JFXApp {
       val x = scala.util.Random.nextDouble * width + 1
       val y = scala.util.Random.nextDouble * height + 1
 
-      val xVelocity = (scala.util.Random.nextDouble()*0.8+0.2)*(if (scala.util.Random.nextBoolean()) 1 else -1)
-      val yVelocity = (scala.util.Random.nextDouble()*0.8+0.2)*(if (scala.util.Random.nextBoolean()) 1 else -1)
+      val xVelocity = (scala.util.Random.nextDouble()*(maxVelocity-minVelocity)+minVelocity)*(if (scala.util.Random.nextBoolean()) 1 else -1)
+      val yVelocity = (scala.util.Random.nextDouble()*(maxVelocity-minVelocity)+minVelocity)*(if (scala.util.Random.nextBoolean()) 1 else -1)
 
       val initialPosition = Vector2D(x, y)
       val initialVelocity = Vector2D(xVelocity, yVelocity)
 
-
-      val display: ImageView = new ImageView(Boid.image)
-      display.setImage(Boid.image)
-      display.setX(initialPosition.x)
-      display.setY(initialPosition.y)
-      display.setSmooth(true)
-      display.setCache(true)
-      display.setRotate(0.0)
-
-
-      Boid(initialPosition, initialVelocity, initialAngle, display, worldSize, boidShape(randomColor))
-    }, worldSize)
+      Boid(initialPosition, initialVelocity, initialAngle, worldSize, boidShape(randomColor))
+    }, worldSize, maxVelocity, minVelocity)
 
   def randomColor(): Color = {
     Color.apply(Random.nextDouble, Random.nextDouble, Random.nextDouble, 1.0)
   }
 
   def pongComponents: Group = new Group {
-    flock = Flock(flock.updatedBoidsPosition(), worldSize)
+    flock = Flock(flock.updatedBoidsPosition(), worldSize, maxVelocity, minVelocity)
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
     children = flock.canvas :+ point :+ centroid
-    //println(s" ${flock.images(0).getX}, ${flock.images(0).getY}")
   }
 
 
@@ -90,7 +79,7 @@ object ScalaBoids extends JFXApp {
   stage = new PrimaryStage {
 
     title = "B-O-I-D-S!"
-    scene = new Scene(width.toDouble, height.toDouble) {
+    scene = new Scene(worldSize.width, worldSize.height) {
       content = pongComponents
 
       val timer = AnimationTimer(t => {

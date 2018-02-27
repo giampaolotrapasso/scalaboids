@@ -45,24 +45,11 @@ case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
   )
 
   def rotate(angle: Double) = Vector2D(
-    x = x *Math.cos(angle) - y *Math.sin(angle),
-    y = x *Math.sin(angle) + y * Math.cos(angle)
+    x = x * Math.cos(angle) - y * Math.sin(angle),
+    y = x * Math.sin(angle) + y * Math.cos(angle)
   )
 
-
-
-  def normalize = {
-
-    def isNormal(vector2D: Vector2D) = vector2D.x < 1.0 && vector2D.x >= 0 && vector2D.y < 1 && vector2D.y >= 0
-
-    if (isNormal(this))
-      this
-    else {
-      val xx = x.toInt
-      val yy = y.toInt
-      copy(x = this.x - xx, y = this.y - yy)
-    }
-  }
+  def norm = Math.sqrt(x * x + y * y)
 
   def normalize(normX: Double = 1.0, normY: Double = 1.0) = {
 
