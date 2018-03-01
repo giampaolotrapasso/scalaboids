@@ -22,6 +22,9 @@ object ScalaBoids extends JFXApp {
   private val minVelocity = 4.0
 
   private val point = scalafx.scene.shape.Circle(width/2, height /2, 4)
+  //private val avoidPoint1  = scalafx.scene.shape.Circle(100, 100, 4)
+  //private val avoidPoint2  = scalafx.scene.shape.Circle(200, 100, 4)
+  private val avoidPoint3  = scalafx.scene.shape.Circle(400, 400, 4)
 
   private val centroid = new Circle {
     centerX = worldSize.center.x
@@ -58,7 +61,7 @@ object ScalaBoids extends JFXApp {
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
-    children = flock.canvas :+ point :+ centroid
+    children = flock.canvas :+ point :+ centroid :+ avoidPoint3
   }
 
 

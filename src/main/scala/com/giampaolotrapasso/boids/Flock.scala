@@ -38,13 +38,15 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
       val avoidOthers = avoidOtherBoids(boids, boid)
       val matchVelocity = matchOthersVelocity(boids, boid)
       val tend = tendToPlace(boid)
+      val avoid = avoidPlace(Vector2D(400,400), boid)
 
       val unlimitedVelocity: Vector2D =
         boid.velocity +
         perceivedCenterOfMass * 0.0005 +
         avoidOthers * 0.01 +
         matchVelocity  * 0.4 +
-        tend * 0.001
+        tend * 0.004
+      // +avoid * 0.004
 
 
       val limitedVelocity = limitVelocity(unlimitedVelocity)
@@ -89,6 +91,14 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   def tendToPlace(boid: Boid) = {
     val place = Vector2D(300, 300)
     (place - boid.position) / 100
+  }
+
+  def avoidPlace(place: Vector2D, boid: Boid) = {
+    var start = Vector2D.zero
+
+    if ((place - boid.position).norm < separationDistance)
+     start = start - ((place - boid.position) / 100)
+    start
   }
 
 
