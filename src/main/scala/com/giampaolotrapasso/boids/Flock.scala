@@ -1,8 +1,12 @@
 package com.giampaolotrapasso.boids
 
+import java.util.Date
+
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
-case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double) {
+import scalafx.scene.Group
+
+case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double, avoidPoints: Seq[Vector2D]) {
 
   private val movementFactor = 1000
   private val boundingFactor = 10
@@ -10,8 +14,6 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   private val separationFactor = 200
 
   private val tendFactor = 5000
-
-
 
 
   private val matchFlockFactor = 8.0
@@ -38,15 +40,15 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
       val avoidOthers = avoidOtherBoids(boids, boid)
       val matchVelocity = matchOthersVelocity(boids, boid)
       val tend = tendToPlace(boid)
-      val avoid = avoidPlace(Vector2D(400,400), boid)
+      val avoid = avoidPlaces(avoidPoints, boid)
 
       val unlimitedVelocity: Vector2D =
         boid.velocity +
-        perceivedCenterOfMass * 0.0005 +
-        avoidOthers * 0.01 +
-        matchVelocity  * 0.4 +
-        tend * 0.004
-      // +avoid * 0.004
+          perceivedCenterOfMass * 0.0005 +
+          avoidOthers * 0.01 +
+          matchVelocity * 0.2 +
+          tend * 0.001 +
+          avoid * 0.6
 
 
       val limitedVelocity = limitVelocity(unlimitedVelocity)
@@ -77,7 +79,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
     boids.filter(b => b != boid).map(_.position).foreach { position =>
       if ((position - boid.position).norm < separationDistance)
-        start = start - (position - boid.position)/ 10.0
+        start = start - (position - boid.position) / 10.0
     }
     start
   }
@@ -93,19 +95,35 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
     (place - boid.position) / 100
   }
 
+  def avoidPlaces(avoidPoints: Seq[Vector2D], boid: Boid) = {
+    var center = Vector2D.zero
+
+    avoidPoints.foreach(place =>
+      center = center + avoidPlace(place, boid)
+    )
+    center
+    /*
+    val center: Vector2D = avoidPoints.fold(Vector2D.zero) {
+      (sum, place) => sum + avoidPlace(place, boid)
+    }
+    center
+    */
+  }
+
+
   def avoidPlace(place: Vector2D, boid: Boid) = {
     var start = Vector2D.zero
 
-    if ((place - boid.position).norm < separationDistance)
-     start = start - ((place - boid.position) / 100)
+    if ((place - boid.position).norm < separationDistance + 6) {
+      start = start - ((place - boid.position) / 10.0)
+    }
     start
   }
 
 
   def limitVelocity(velocity: Vector2D) = {
     if (velocity.norm < minVelocity)
-      (velocity / velocity.norm) * minVelocity else
-    if (velocity.norm > maxVelocity)
+      (velocity / velocity.norm) * minVelocity else if (velocity.norm > maxVelocity)
       (velocity / velocity.norm) * maxVelocity
     else velocity
   }
@@ -114,23 +132,23 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   def boundPosition(position: Vector2D) = {
     var v = position
 
-    if (position.x < worldSize.minX + 10)
+    if (position.x < worldSize.minX + 100)
       v = v.copy(x = v.x + 1)
 
-    if (position.x > worldSize.maxX - 10)
+    if (position.x > worldSize.maxX - 100)
       v = v.copy(x = v.x - 1)
 
 
-    if (position.y < worldSize.minY + 10)
+    if (position.y < worldSize.minY + 100)
       v = v.copy(y = v.y + 1)
 
-    if (position.x > worldSize.maxY - 10)
+    if (position.x > worldSize.maxY - 100)
       v = v.copy(y = v.y - 1)
 
     v
   }
 
-  def canvas = boids.map(_.circle)
+  def canvas: Seq[Group] = boids.map(_.circle)
 
 
 }
