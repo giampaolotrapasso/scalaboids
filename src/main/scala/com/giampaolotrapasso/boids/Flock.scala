@@ -1,23 +1,12 @@
 package com.giampaolotrapasso.boids
 
-import java.util.Date
-
 import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
 
 import scalafx.scene.Group
 
 case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double, avoidPoints: Seq[Vector2D]) {
 
-  private val movementFactor = 1000
-  private val boundingFactor = 10
   private val separationDistance = 20
-  private val separationFactor = 200
-
-  private val tendFactor = 5000
-
-
-  private val matchFlockFactor = 8.0
-
 
   private def getNextAngle(current: Vector2D, next: Vector2D): Double = {
     val dX = next.x - current.x
@@ -96,20 +85,8 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   }
 
   def avoidPlaces(avoidPoints: Seq[Vector2D], boid: Boid) = {
-    var center = Vector2D.zero
-
-    avoidPoints.foreach(place =>
-      center = center + avoidPlace(place, boid)
-    )
-    center
-    /*
-    val center: Vector2D = avoidPoints.fold(Vector2D.zero) {
-      (sum, place) => sum + avoidPlace(place, boid)
-    }
-    center
-    */
+    avoidPoints.fold(Vector2D.zero)( (sum, place)  => sum + avoidPlace(place, boid))
   }
-
 
   def avoidPlace(place: Vector2D, boid: Boid) = {
     var start = Vector2D.zero
