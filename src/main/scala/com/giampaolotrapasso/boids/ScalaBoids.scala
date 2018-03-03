@@ -17,8 +17,8 @@ object ScalaBoids extends JFXApp {
 
   private val initialAngle = 0.0
 
-  val width = 600.0
-  val height = 600.0
+  val width =800.0
+  val height = 800.0
   val worldSize = WorldSize(0, 0, width, height)
   private val maxVelocity = 5.0
   private val minVelocity = 4.0
@@ -26,7 +26,7 @@ object ScalaBoids extends JFXApp {
   private val point = scalafx.scene.shape.Circle(width / 2, height / 2, 4)
 
 
-  private def barrier = Range(1, 1).map { i =>
+  private def barrier = Range(1, 10).map { i =>
     Vector2D(
       x = 100 + i * 8, // scala.util.Random.nextDouble() * width,
       y = 200 // scala.util.Random.nextDouble() * height

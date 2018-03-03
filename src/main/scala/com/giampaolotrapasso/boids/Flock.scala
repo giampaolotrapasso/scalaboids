@@ -25,7 +25,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
 
     boids.map { boid =>
-      val near = boids.filter( b => (b.position - boid.position).norm < 50)
+      val near = boids.filter( b => (b.position - boid.position).norm < 100)
 
       val perceivedCenterOfMass = calculatePerceivedCenterOfMass(near, boid)
       val avoidOthers = avoidOtherBoids(boids, boid)
@@ -39,7 +39,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
           avoidOthers * 0.01 +
           matchVelocity * 0.2 +
           tend * 0.001 +
-          avoid * 0.9
+          avoid * 1.1
 
 
       val limitedVelocity = limitVelocity(unlimitedVelocity)
@@ -111,17 +111,17 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   def boundPosition(position: Vector2D) = {
     var v = position
 
-    if (position.x < worldSize.minX + 100)
+    if (position.x < worldSize.minX + 200)
       v = v.copy(x = v.x + 1)
 
-    if (position.x > worldSize.maxX - 100)
+    if (position.x > worldSize.maxX - 200)
       v = v.copy(x = v.x - 1)
 
 
-    if (position.y < worldSize.minY + 100)
+    if (position.y < worldSize.minY + 200)
       v = v.copy(y = v.y + 1)
 
-    if (position.x > worldSize.maxY - 100)
+    if (position.x > worldSize.maxY - 200)
       v = v.copy(y = v.y - 1)
 
     v
