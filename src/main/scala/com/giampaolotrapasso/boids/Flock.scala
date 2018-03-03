@@ -22,26 +22,28 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
       (sum, element) => sum + element
     }.divide(boids.size)
 
+
+
     boids.map { boid =>
+      val near = boids.filter( b => (b.position - boid.position).norm < 50)
 
-
-      val perceivedCenterOfMass = calculatePerceivedCenterOfMass(boids, boid)
+      val perceivedCenterOfMass = calculatePerceivedCenterOfMass(near, boid)
       val avoidOthers = avoidOtherBoids(boids, boid)
-      val matchVelocity = matchOthersVelocity(boids, boid)
+      val matchVelocity = matchOthersVelocity(near, boid)
       val tend = tendToPlace(boid)
       val avoid = avoidPlaces(avoidPoints, boid)
 
       val unlimitedVelocity: Vector2D =
         boid.velocity +
-          perceivedCenterOfMass * 0.0005 +
+          perceivedCenterOfMass * 0.005 +
           avoidOthers * 0.01 +
           matchVelocity * 0.2 +
           tend * 0.001 +
-          avoid * 0.6
+          avoid * 0.9
 
 
       val limitedVelocity = limitVelocity(unlimitedVelocity)
-      val nextPosition = boid.position.add(limitedVelocity)
+      val nextPosition = boundPosition(boid.position.add(limitedVelocity))
 
       val angle = getNextAngle(boid.position, nextPosition)
 
@@ -58,7 +60,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
   def calculatePerceivedCenterOfMass(boids: Seq[Boid], boid: Boid) = {
     val l = boids.filter(b => b != boid).map(_.position).fold(Vector2D.zero)((v1, v2) => v1 + v2)
-    val m = l.divide(boids.size - 1)
+    val m = if (boids.size > 1)  l.divide(boids.size - 1) else l
 
     (m - boid.position) / 100
   }
@@ -75,7 +77,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
   def matchOthersVelocity(boids: Seq[Boid], boid: Boid) = {
     val l = boids.filter(b => b != boid).map(_.velocity).fold(Vector2D.zero)((v1, v2) => v1 + v2)
-    val m = l.divide(boids.size - 1)
+    val m = if (boids.size > 1) l.divide(boids.size - 1) else l
     (m - boid.velocity) / 8
   }
 

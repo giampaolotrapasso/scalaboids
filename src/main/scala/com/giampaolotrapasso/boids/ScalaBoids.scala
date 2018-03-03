@@ -26,7 +26,7 @@ object ScalaBoids extends JFXApp {
   private val point = scalafx.scene.shape.Circle(width / 2, height / 2, 4)
 
 
-  private def barrier = Range(1, 30).map { i =>
+  private def barrier = Range(1, 1).map { i =>
     Vector2D(
       x = 100 + i * 8, // scala.util.Random.nextDouble() * width,
       y = 200 // scala.util.Random.nextDouble() * height
