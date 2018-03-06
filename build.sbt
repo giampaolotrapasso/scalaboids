@@ -1,21 +1,25 @@
-name := "scalaboids"
+name := "scalaboidsproject"
 
 organization := "com.giampaolotrapasso"
 
-version := "0.1-SNAPSHOT"
+version := "1.0"
 
-scalaVersion := "2.12.1"
+scalaVersion := "2.12.3"
 
-libraryDependencies ++= Seq(
-  "org.scalafx"   %% "scalafx"   % "8.0.102-R11",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test" //http://www.scalatest.org/download
-)
 
-shellPrompt := { state => System.getProperty("user.name") + "> " }
+lazy val scalaboids = project.in(file("scalaboids"))
 
-// set the main class for the main 'run' task
-// change Compile to Test to set it for 'test:run'
-mainClass in (Compile, run) := Some("com.giampaolotrapasso.boids.ScalaBoids")
+lazy val root = project
+  .in(file("."))
+  .settings(
+    libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.102-R11"
+  )
+  .aggregate(scalaboids)
+  .dependsOn(scalaboids)
 
 // Fork a new JVM for 'run' and 'test:run' to avoid JavaFX double initialization problems
 fork := true
+
+
+
+

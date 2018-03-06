@@ -1,17 +1,18 @@
-package com.giampaolotrapasso.boids
+package com.giampaolotrapasso.scalaboids.fxapp
 
-import com.giampaolotrapasso.boids.ScalaBoids.flock
-import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
+import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
+import com.giampaolotrapasso.scalaboids.{Boid, Flock, fxapp}
 
-import scala.collection.immutable
-import scala.language.postfixOps
+
 import scala.util.Random
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.scene.{Group, Scene}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
-import scalafx.scene.{Group, Node, Scene}
+
+
 
 object ScalaBoids extends JFXApp {
 
@@ -23,7 +24,7 @@ object ScalaBoids extends JFXApp {
   private val maxVelocity = 5.0
   private val minVelocity = 4.0
 
-  private val point = scalafx.scene.shape.Circle(width / 2, height / 2, 4)
+  private val point = Circle(width / 2, height / 2, 4)
 
 
   private def barrier = Range(1, 10).map { i =>
@@ -69,8 +70,13 @@ object ScalaBoids extends JFXApp {
         val initialPosition = Vector2D(x, y)
         val initialVelocity = Vector2D(xVelocity, yVelocity)
 
-        Boid(initialPosition, initialVelocity, initialAngle, worldSize, boidShape(randomColor))
+
+        Boid(initialPosition, initialVelocity, initialAngle, worldSize)
     }, worldSize, maxVelocity, minVelocity, avoid)
+
+  private var images = flock.boids.map{f =>
+    boidShape(randomColor)
+  }
 
   def randomColor(): Color = {
     Color.apply(Random.nextDouble, Random.nextDouble, Random.nextDouble, 1.0)
@@ -80,13 +86,23 @@ object ScalaBoids extends JFXApp {
     children = avoidCircles
   }
 
-
   def pongComponents: Group = new Group {
     flock = Flock(flock.updatedBoidsPosition(), worldSize, maxVelocity, minVelocity, avoid)
+
+    images.zip(flock.boids).foreach{ case (image, boid) =>
+
+      image.setCache(true)
+      image.setRotate(boid.angle)
+      image.layoutX = boid.position.x
+      image.layoutY = boid.position.y
+
+    }
+
+
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
-    children = flock.canvas :+ elements :+ point :+ centroid
+    children = images :+ elements :+ point :+ centroid
   }
 
 

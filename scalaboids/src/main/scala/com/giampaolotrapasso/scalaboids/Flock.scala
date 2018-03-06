@@ -1,8 +1,7 @@
-package com.giampaolotrapasso.boids
+package com.giampaolotrapasso.scalaboids
 
-import com.giampaolotrapasso.boids.utility.{Vector2D, WorldSize}
+import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
 
-import scalafx.scene.Group
 
 case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double, avoidPoints: Seq[Vector2D]) {
 
@@ -47,14 +46,10 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
       val angle = getNextAngle(boid.position, nextPosition)
 
-      val circle = boid.circle
-      circle.setCache(true)
-      circle.setRotate(angle)
-      circle.layoutX = nextPosition.x
-      circle.layoutY = nextPosition.y
 
 
-      Boid(position = nextPosition, velocity = unlimitedVelocity, angle = angle, worldSize = worldSize, circle = circle)
+
+      Boid(position = nextPosition, velocity = unlimitedVelocity, angle = angle, worldSize = worldSize)
     }
   }
 
@@ -127,7 +122,7 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
     v
   }
 
-  def canvas: Seq[Group] = boids.map(_.circle)
+
 
 
 }

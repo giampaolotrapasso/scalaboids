@@ -1,4 +1,4 @@
-package com.giampaolotrapasso.boids.utility
+package com.giampaolotrapasso.scalaboids.utility
 
 case class WorldSize(minX: Double, minY: Double, maxX: Double, maxY: Double) {
 

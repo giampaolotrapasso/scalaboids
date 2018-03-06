@@ -1,6 +1,4 @@
-package com.giampaolotrapasso.boids.utility
-
-import scala.annotation.tailrec
+package com.giampaolotrapasso.scalaboids.utility
 
 case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
 
