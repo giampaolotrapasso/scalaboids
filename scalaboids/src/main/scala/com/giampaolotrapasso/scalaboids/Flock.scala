@@ -3,7 +3,13 @@ package com.giampaolotrapasso.scalaboids
 import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
 
 
-case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, minVelocity: Double, avoidPoints: Seq[Vector2D]) {
+case class Flock(boids: Seq[Boid],
+                 tendPlace: Vector2D,
+                 tend: Boolean,
+                 worldSize: WorldSize,
+                 maxVelocity: Double,
+                 minVelocity: Double,
+                 avoidPoints: Seq[Vector2D]) {
 
   private val separationDistance = 20
 
@@ -22,9 +28,8 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
     }.divide(boids.size)
 
 
-
     boids.map { boid =>
-      val near = boids.filter( b => (b.position - boid.position).norm < 100)
+      val near = boids.filter(b => (b.position - boid.position).norm < 100)
 
       val perceivedCenterOfMass = calculatePerceivedCenterOfMass(near, boid)
       val avoidOthers = avoidOtherBoids(boids, boid)
@@ -47,15 +52,13 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
       val angle = getNextAngle(boid.position, nextPosition)
 
 
-
-
       Boid(position = nextPosition, velocity = unlimitedVelocity, angle = angle, worldSize = worldSize)
     }
   }
 
   def calculatePerceivedCenterOfMass(boids: Seq[Boid], boid: Boid) = {
     val l = boids.filter(b => b != boid).map(_.position).fold(Vector2D.zero)((v1, v2) => v1 + v2)
-    val m = if (boids.size > 1)  l.divide(boids.size - 1) else l
+    val m = if (boids.size > 1) l.divide(boids.size - 1) else l
 
     (m - boid.position) / 100
   }
@@ -77,12 +80,15 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
   }
 
   def tendToPlace(boid: Boid) = {
-    val place = Vector2D(300, 300)
-    (place - boid.position) / 100
+    val p = (tendPlace - boid.position) / 100
+    if (tend)
+      p
+    else
+      p * -1
   }
 
   def avoidPlaces(avoidPoints: Seq[Vector2D], boid: Boid) = {
-    avoidPoints.fold(Vector2D.zero)( (sum, place)  => sum + avoidPlace(place, boid))
+    avoidPoints.fold(Vector2D.zero)((sum, place) => sum + avoidPlace(place, boid))
   }
 
   def avoidPlace(place: Vector2D, boid: Boid) = {
@@ -121,8 +127,6 @@ case class Flock(boids: Seq[Boid], worldSize: WorldSize, maxVelocity: Double, mi
 
     v
   }
-
-
 
 
 }

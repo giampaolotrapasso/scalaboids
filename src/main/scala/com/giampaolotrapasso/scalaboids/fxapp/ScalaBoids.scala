@@ -3,28 +3,34 @@ package com.giampaolotrapasso.scalaboids.fxapp
 import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
 import com.giampaolotrapasso.scalaboids.{Boid, Flock, fxapp}
 
-
 import scala.util.Random
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.geometry.{Insets, Pos}
+import scalafx.scene.control.{Button, CheckBox}
+import scalafx.scene.layout._
 import scalafx.scene.{Group, Scene}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
-
+import scalafx.Includes._
+import scalafx.event.ActionEvent
+import scalafx.scene.input.MouseEvent
 
 
 object ScalaBoids extends JFXApp {
 
   private val initialAngle = 0.0
 
-  val width =800.0
+  val width = 800.0
   val height = 800.0
   val worldSize = WorldSize(0, 0, width, height)
   private val maxVelocity = 5.0
   private val minVelocity = 4.0
 
-  private val point = Circle(width / 2, height / 2, 4)
+  private var tendPoint = Circle(width / 2, height / 2, 4)
+  private var tendPlace = Vector2D(width /2, height / 2)
+  private var tend = true
 
 
   private def barrier = Range(1, 10).map { i =>
@@ -72,9 +78,9 @@ object ScalaBoids extends JFXApp {
 
 
         Boid(initialPosition, initialVelocity, initialAngle, worldSize)
-    }, worldSize, maxVelocity, minVelocity, avoid)
+    }, tendPlace, true, worldSize, maxVelocity, minVelocity, avoid)
 
-  private var images = flock.boids.map{f =>
+  private var images = flock.boids.map { f =>
     boidShape(randomColor)
   }
 
@@ -87,9 +93,9 @@ object ScalaBoids extends JFXApp {
   }
 
   def pongComponents: Group = new Group {
-    flock = Flock(flock.updatedBoidsPosition(), worldSize, maxVelocity, minVelocity, avoid)
+    flock = Flock(flock.updatedBoidsPosition(), tendPlace, tend, worldSize, maxVelocity, minVelocity, avoid)
 
-    images.zip(flock.boids).foreach{ case (image, boid) =>
+    images.zip(flock.boids).foreach { case (image, boid) =>
 
       image.setCache(true)
       image.setRotate(boid.angle)
@@ -102,7 +108,7 @@ object ScalaBoids extends JFXApp {
     val c = center
     centroid.setCenterX(c.x)
     centroid.setCenterY(c.y)
-    children = images :+ elements :+ point :+ centroid
+    children = images :+ elements :+ tendPoint :+ centroid
   }
 
 
@@ -118,21 +124,92 @@ object ScalaBoids extends JFXApp {
     g
   }
 
+  val innerPane = new Pane {}
+
+
+  val pane = new Pane {
+    // Add rectangle that will be updated with user interactions
+    children = innerPane
+  }
+
+  val check = new CheckBox {
+    text = "Tend"
+    indeterminate = false
+    selected = true
+  }
+
+  check.onAction = (event: ActionEvent) => {
+    tend <== check.selected()
+  }
+
+
+  val topPane =
+    new HBox {
+      hgrow = Priority.Always
+      alignmentInParent = Pos.CenterRight
+      padding = Insets(10, 0, 10, 0)
+      spacing = 10
+      children = Seq(
+        new Region {
+          minWidth = 10
+          maxWidth = Double.MaxValue
+          hgrow = Priority.Always
+        },
+        check,
+        new Button("View README") {
+          prefWidth = 125
+        },
+        new Button {
+          prefWidth = 125
+          text = "Hello"
+          defaultButton = true
+        }
+      )
+    }
+
+
+  topPane.setStyle("-fx-background-color: rgba(0, 100, 100, 1);")
+
+
+  innerPane.children = pongComponents
+
+  val borderPane = new BorderPane {
+    center = innerPane
+    top = topPane
+
+  }
+
+
+  innerPane.handleEvent(MouseEvent.Any) { me: MouseEvent => {
+      me.eventType match {
+        case MouseEvent.MousePressed => {
+          tendPlace = Vector2D(me.x, me.y)
+          // Reset the shape
+          tendPoint = Circle(me.x, me.y, 4)
+        }
+        case _ => {}
+      }
+    }
+  }
+
+  val p = new Pane
+
 
   stage = new PrimaryStage {
 
     title = "B-O-I-D-S!"
     scene = new Scene(worldSize.width, worldSize.height) {
-      content = pongComponents
+
+      root = borderPane
 
       val timer = AnimationTimer(t => {
-        content = pongComponents
+        //updateFlock()
+        innerPane.children = pongComponents
       })
 
       timer.start()
     }
-
-
   }
+
 
 }
