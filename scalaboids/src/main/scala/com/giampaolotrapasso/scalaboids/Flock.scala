@@ -123,8 +123,7 @@ case class Flock(boids: Seq[Boid],
 
     if (position.x > worldSize.maxX)
       v = v.copy(x = worldSize.minX)
-
-
+    
     if (position.y < worldSize.minY)
       v = v.copy(y = worldSize.maxY)
 
@@ -134,27 +133,6 @@ case class Flock(boids: Seq[Boid],
     v
   }
 
-
-  def boundPosition(position: Vector2D) = {
-    var v = position
-    val factor = 0.3
-    var bound = 100
-
-    if (position.x < worldSize.minX + bound)
-      v = v.copy(x = v.x + factor)
-
-    if (position.x > worldSize.maxX - bound)
-      v = v.copy(x = v.x - factor)
-
-
-    if (position.y < worldSize.minY + bound)
-      v = v.copy(y = v.y + factor)
-
-    if (position.y > worldSize.maxY - bound)
-      v = v.copy(y = v.y - factor)
-
-    v
-  }
 
 
 }

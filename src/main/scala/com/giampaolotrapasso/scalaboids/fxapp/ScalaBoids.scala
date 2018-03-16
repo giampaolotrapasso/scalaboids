@@ -10,14 +10,12 @@ import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene
 import scalafx.scene.control.{CheckBox, Label, Slider}
 import scalafx.scene.input.MouseEvent
 import scalafx.scene.layout._
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
 import scalafx.scene.{Group, Scene}
-import scalafx.stage.StageStyle
 
 
 object ScalaBoids extends JFXApp {
@@ -35,13 +33,7 @@ object ScalaBoids extends JFXApp {
   private var tend = true
   private var config = Config()
 
-
-  private def barrier = Range(1, 100).map { i =>
-    Vector2D(
-      x = 100 + i, // scala.util.Random.nextDouble() * width,
-      y = 200 // scala.util.Random.nextDouble() * height
-    )
-  }
+  private def barrier = Range(1, 100).map { i => Vector2D(x = 100 + i, y = 200) }
 
   val avoid = barrier
 
@@ -53,15 +45,6 @@ object ScalaBoids extends JFXApp {
       strokeWidth = 2
       fill = Color.IndianRed
     })
-
-
-  private val centroid = new Circle {
-    centerX = worldSize.center.x
-    centerY = worldSize.center.y
-    radius = 2
-    strokeWidth = 2
-    fill = Color.Green
-  }
 
   private def center = flock.boids.map(_.position).fold(Vector2D(0.0, 0.0)) {
     (sum, element) => sum + element
@@ -84,11 +67,9 @@ object ScalaBoids extends JFXApp {
     }
   }
 
-  private var flock = new Flock(generateBoids(20)
-    , tendPlace, config, true, worldSize, maxVelocity, minVelocity, avoid)
+  private var flock = new Flock(generateBoids(20), tendPlace, config, true, worldSize, maxVelocity, minVelocity, avoid)
 
   private var images = makeImages(flock.boids.size)
-
 
   private def makeImages(number: Int) = {
     Range(0, number).map { f =>
@@ -96,7 +77,7 @@ object ScalaBoids extends JFXApp {
     }
   }
 
-  def randomColor(): Color = {
+  private def randomColor(): Color = {
     Color.apply(Random.nextDouble, Random.nextDouble, Random.nextDouble, 1.0)
   }
 
@@ -134,14 +115,10 @@ object ScalaBoids extends JFXApp {
       image.setRotate(boid.angle)
       image.layoutX = boid.position.x
       image.layoutY = boid.position.y
-
     }
 
-
     val c = center
-    centroid.setCenterX(c.x)
-    centroid.setCenterY(c.y)
-    children = images :+ elements :+ tendPoint :+ centroid
+    children = images :+ elements :+ tendPoint
   }
 
 
@@ -193,8 +170,6 @@ object ScalaBoids extends JFXApp {
   val numberOfBoidsSlider = slider(5, 100, 20)
 
 
-
-
   val label = new Label {
     wrapText = true
   }
@@ -232,20 +207,16 @@ object ScalaBoids extends JFXApp {
     tend <== check.selected()
   }
 
-
   leftPane.setStyle("-fx-background-color: rgba(150, 150, 150, 1);")
-
 
   innerPane.children = pongComponents
 
   val borderPane = new BorderPane {
     center = innerPane
     left = leftPane
-
   }
 
-
-  innerPane.handleEvent(MouseEvent.Any) { me: MouseEvent => {
+  innerPane.handleEvent(MouseEvent.Any) { me: MouseEvent =>
     me.eventType match {
       case MouseEvent.MousePressed => {
         tendPlace = Vector2D(me.x, me.y)
@@ -255,10 +226,8 @@ object ScalaBoids extends JFXApp {
       case _ => {}
     }
   }
-  }
 
   val p = new Pane
-
 
 
   stage = new PrimaryStage {
@@ -279,7 +248,6 @@ object ScalaBoids extends JFXApp {
 
   stage.setResizable(false)
   stage.setMinWidth(945)
-
 
 
 }
