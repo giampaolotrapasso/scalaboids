@@ -8,14 +8,16 @@ import scalafx.Includes._
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.collections.ObservableBuffer
 import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{CheckBox, Label, Slider}
+import scalafx.scene.control.{CheckBox, ChoiceBox, Label, Slider}
 import scalafx.scene.input.MouseEvent
 import scalafx.scene.layout._
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
 import scalafx.scene.{Group, Scene}
+import MouseOption._
 
 
 object ScalaBoids extends JFXApp {
@@ -143,10 +145,18 @@ object ScalaBoids extends JFXApp {
   }
 
   val check = new CheckBox {
-    text = "Tend"
+    text = "Tend to place"
     indeterminate = false
     selected = true
   }
+
+  val choicebox = new ChoiceBox[String] {
+    maxWidth = 80
+    maxHeight = 50
+    items = ObservableBuffer(Nothing, FollowPointer, AvoidPointer)
+    selectionModel().selectFirst()
+  }
+
 
   def slider(minValue: Double,
              maxValue: Double,
@@ -199,7 +209,10 @@ object ScalaBoids extends JFXApp {
         nearBoidDistance,
         label("Number of boids"),
         numberOfBoidsSlider,
+        label("Mouse function"),
+        choicebox,
         label
+
       )
     }
 
@@ -222,6 +235,19 @@ object ScalaBoids extends JFXApp {
         tendPlace = Vector2D(me.x, me.y)
         // Reset the shape
         tendPoint = Circle(me.x, me.y, 4)
+      }
+      case MouseEvent.MouseMoved => {
+        if (choicebox.value.value == MouseOption.FollowPointer) {
+          tend = true
+          tendPlace = Vector2D(me.x, me.y)
+        } else if (choicebox.value.value == MouseOption.AvoidPointer) {
+          tend = false
+          tendPlace = Vector2D(me.x, me.y)
+        } else {
+          tend = true
+          tendPlace = Vector2D(tendPoint.centerX.value, tendPoint.centerY.value)
+        }
+
       }
       case _ => {}
     }
