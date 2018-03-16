@@ -1,21 +1,23 @@
 package com.giampaolotrapasso.scalaboids.fxapp
 
 import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
-import com.giampaolotrapasso.scalaboids.{Boid, Flock, fxapp}
+import com.giampaolotrapasso.scalaboids.{Boid, Config, Flock}
 
 import scala.util.Random
+import scalafx.Includes._
 import scalafx.animation.AnimationTimer
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
+import scalafx.event.ActionEvent
 import scalafx.geometry.{Insets, Pos}
-import scalafx.scene.control.{Button, CheckBox}
+import scalafx.scene
+import scalafx.scene.control.{CheckBox, Label, Slider}
+import scalafx.scene.input.MouseEvent
 import scalafx.scene.layout._
-import scalafx.scene.{Group, Scene}
 import scalafx.scene.paint.Color
 import scalafx.scene.shape.{Circle, Line}
-import scalafx.Includes._
-import scalafx.event.ActionEvent
-import scalafx.scene.input.MouseEvent
+import scalafx.scene.{Group, Scene}
+import scalafx.stage.StageStyle
 
 
 object ScalaBoids extends JFXApp {
@@ -29,13 +31,14 @@ object ScalaBoids extends JFXApp {
   private val minVelocity = 4.0
 
   private var tendPoint = Circle(width / 2, height / 2, 4)
-  private var tendPlace = Vector2D(width /2, height / 2)
+  private var tendPlace = Vector2D(width / 2, height / 2)
   private var tend = true
+  private var config = Config()
 
 
-  private def barrier = Range(1, 10).map { i =>
+  private def barrier = Range(1, 100).map { i =>
     Vector2D(
-      x = 100 + i * 8, // scala.util.Random.nextDouble() * width,
+      x = 100 + i, // scala.util.Random.nextDouble() * width,
       y = 200 // scala.util.Random.nextDouble() * height
     )
   }
@@ -64,8 +67,8 @@ object ScalaBoids extends JFXApp {
     (sum, element) => sum + element
   }.divide(flock.boids.size)
 
-  private var flock = new Flock(
-    Range(0, 20).map {
+  private def generateBoids(number: Int) = {
+    Range(0, number).map {
       _ =>
         val x = scala.util.Random.nextDouble * width + 1
         val y = scala.util.Random.nextDouble * height + 1
@@ -78,10 +81,19 @@ object ScalaBoids extends JFXApp {
 
 
         Boid(initialPosition, initialVelocity, initialAngle, worldSize)
-    }, tendPlace, true, worldSize, maxVelocity, minVelocity, avoid)
+    }
+  }
 
-  private var images = flock.boids.map { f =>
-    boidShape(randomColor)
+  private var flock = new Flock(generateBoids(20)
+    , tendPlace, config, true, worldSize, maxVelocity, minVelocity, avoid)
+
+  private var images = makeImages(flock.boids.size)
+
+
+  private def makeImages(number: Int) = {
+    Range(0, number).map { f =>
+      boidShape(randomColor)
+    }
   }
 
   def randomColor(): Color = {
@@ -93,8 +105,29 @@ object ScalaBoids extends JFXApp {
   }
 
   def pongComponents: Group = new Group {
-    flock = Flock(flock.updatedBoidsPosition(), tendPlace, tend, worldSize, maxVelocity, minVelocity, avoid)
+    config = config
+      .copy(distanceBeetweenBoids = boidDistanceSlider.value.toInt)
+      .copy(centerOfMass = centerOfMassSlider.value.toInt)
+      .copy(matchVelocity = matchVelocitySlider.value.toInt)
+      .copy(nearBoidDistance = nearBoidDistance.value.toInt)
+      .copy(tendToPlace = tendToPlaceSlider.value.toInt)
 
+    label.text = config.toString.replace(",", ",\n")
+
+    val currentNumberOfBoids = numberOfBoidsSlider.value.toInt
+
+    if (flock.boids.size > currentNumberOfBoids) {
+      flock = flock.copy(boids = flock.boids.take(currentNumberOfBoids))
+      images = images.take(currentNumberOfBoids)
+    }
+    else if (flock.boids.size < currentNumberOfBoids) {
+      val temp = flock.boids.size
+
+      flock = flock.copy(boids = flock.boids ++ generateBoids(currentNumberOfBoids - temp))
+      images = images ++ makeImages(currentNumberOfBoids - temp)
+    }
+
+    flock = Flock(flock.updatedBoidsPosition(), tendPlace, config, tend, worldSize, maxVelocity, minVelocity, avoid)
     images.zip(flock.boids).foreach { case (image, boid) =>
 
       image.setCache(true)
@@ -138,16 +171,39 @@ object ScalaBoids extends JFXApp {
     selected = true
   }
 
-  check.onAction = (event: ActionEvent) => {
-    tend <== check.selected()
+  def slider(minValue: Double,
+             maxValue: Double,
+             defaultValue: Double) = new Slider() {
+    prefWidth = 125
+    min = minValue
+    max = maxValue
+    value = defaultValue
   }
 
 
-  val topPane =
-    new HBox {
+  def label(labelText: String) = new Label {
+    text = labelText
+  }
+
+  val boidDistanceSlider = slider(16, 50, 23)
+  val centerOfMassSlider = slider(0, 100, 3)
+  val matchVelocitySlider = slider(0, 1000, 5)
+  val tendToPlaceSlider = slider(0, 1000, 500)
+  val nearBoidDistance = slider(10, worldSize.width, 100)
+  val numberOfBoidsSlider = slider(5, 100, 20)
+
+
+
+
+  val label = new Label {
+    wrapText = true
+  }
+
+  val leftPane =
+    new VBox {
       hgrow = Priority.Always
       alignmentInParent = Pos.CenterRight
-      padding = Insets(10, 0, 10, 0)
+      padding = Insets(10, 10, 10, 10)
       spacing = 10
       children = Seq(
         new Region {
@@ -156,43 +212,53 @@ object ScalaBoids extends JFXApp {
           hgrow = Priority.Always
         },
         check,
-        new Button("View README") {
-          prefWidth = 125
-        },
-        new Button {
-          prefWidth = 125
-          text = "Hello"
-          defaultButton = true
-        }
+        label("Boids distance"),
+        boidDistanceSlider,
+        label("Center of mass"),
+        centerOfMassSlider,
+        label("Match velocity"),
+        matchVelocitySlider,
+        label("Tend to place"),
+        tendToPlaceSlider,
+        label("Near boids"),
+        nearBoidDistance,
+        label("Number of boids"),
+        numberOfBoidsSlider,
+        label
       )
     }
 
+  check.onAction = (event: ActionEvent) => {
+    tend <== check.selected()
+  }
 
-  topPane.setStyle("-fx-background-color: rgba(0, 100, 100, 1);")
+
+  leftPane.setStyle("-fx-background-color: rgba(150, 150, 150, 1);")
 
 
   innerPane.children = pongComponents
 
   val borderPane = new BorderPane {
     center = innerPane
-    top = topPane
+    left = leftPane
 
   }
 
 
   innerPane.handleEvent(MouseEvent.Any) { me: MouseEvent => {
-      me.eventType match {
-        case MouseEvent.MousePressed => {
-          tendPlace = Vector2D(me.x, me.y)
-          // Reset the shape
-          tendPoint = Circle(me.x, me.y, 4)
-        }
-        case _ => {}
+    me.eventType match {
+      case MouseEvent.MousePressed => {
+        tendPlace = Vector2D(me.x, me.y)
+        // Reset the shape
+        tendPoint = Circle(me.x, me.y, 4)
       }
+      case _ => {}
     }
+  }
   }
 
   val p = new Pane
+
 
 
   stage = new PrimaryStage {
@@ -210,6 +276,10 @@ object ScalaBoids extends JFXApp {
       timer.start()
     }
   }
+
+  stage.setResizable(false)
+  stage.setMinWidth(945)
+
 
 
 }

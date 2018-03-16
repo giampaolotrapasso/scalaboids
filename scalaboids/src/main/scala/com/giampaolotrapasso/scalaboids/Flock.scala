@@ -5,13 +5,12 @@ import com.giampaolotrapasso.scalaboids.utility.{Vector2D, WorldSize}
 
 case class Flock(boids: Seq[Boid],
                  tendPlace: Vector2D,
+                 config: Config,
                  tend: Boolean,
                  worldSize: WorldSize,
                  maxVelocity: Double,
                  minVelocity: Double,
                  avoidPoints: Seq[Vector2D]) {
-
-  private val separationDistance = 20
 
   private def getNextAngle(current: Vector2D, next: Vector2D): Double = {
     val dX = next.x - current.x
@@ -23,13 +22,8 @@ case class Flock(boids: Seq[Boid],
 
 
   def updatedBoidsPosition(): Seq[Boid] = {
-    val center: Vector2D = boids.map(_.position).fold(Vector2D(0.0, 0.0)) {
-      (sum, element) => sum + element
-    }.divide(boids.size)
-
-
     boids.map { boid =>
-      val near = boids.filter(b => (b.position - boid.position).norm < 100)
+      val near = boids.filter(b => (b.position - boid.position).length < config.nearBoidDistance)
 
       val perceivedCenterOfMass = calculatePerceivedCenterOfMass(near, boid)
       val avoidOthers = avoidOtherBoids(boids, boid)
@@ -39,48 +33,59 @@ case class Flock(boids: Seq[Boid],
 
       val unlimitedVelocity: Vector2D =
         boid.velocity +
-          perceivedCenterOfMass * 0.005 +
-          avoidOthers * 0.01 +
-          matchVelocity * 0.2 +
-          tend * 0.001 +
-          avoid * 1.1
+          perceivedCenterOfMass * (config.centerOfMass / 100000.0) +
+          avoidOthers + // * (config.avoidOthers / 1000.0)
+          matchVelocity  * (config.matchVelocity / 1000.0) +
+          tend * (config.matchVelocity / 1000.0) +
+          avoid //* (config.avoidObstacles / 1000.0)
 
 
       val limitedVelocity = limitVelocity(unlimitedVelocity)
-      val nextPosition = boundPosition(boid.position.add(limitedVelocity))
+      val nextPosition = wrapPosition(boid.position.add(limitedVelocity))
 
       val angle = getNextAngle(boid.position, nextPosition)
 
 
-      Boid(position = nextPosition, velocity = unlimitedVelocity, angle = angle, worldSize = worldSize)
+      Boid(position = nextPosition, velocity = limitedVelocity, angle = angle, worldSize = worldSize)
     }
   }
 
   def calculatePerceivedCenterOfMass(boids: Seq[Boid], boid: Boid) = {
-    val l = boids.filter(b => b != boid).map(_.position).fold(Vector2D.zero)((v1, v2) => v1 + v2)
+    val l = boids
+      .filter(b => b != boid)
+      .filter(b => (b.position - boid.position).length < config.nearBoidDistance)
+      .map(_.position)
+      .fold(Vector2D.zero)((v1, v2) => v1 + v2)
     val m = if (boids.size > 1) l.divide(boids.size - 1) else l
 
-    (m - boid.position) / 100
+    (m - boid.position)
   }
 
   def avoidOtherBoids(boids: Seq[Boid], boid: Boid): Vector2D = {
     var start = Vector2D.zero
 
     boids.filter(b => b != boid).map(_.position).foreach { position =>
-      if ((position - boid.position).norm < separationDistance)
-        start = start - (position - boid.position) / 10.0
+      val distance = (position - boid.position).length
+      if (distance < config.distanceBeetweenBoids) {
+        val diff = (position - boid.position).divide(distance)
+        start = start - diff
+      }
     }
     start
   }
 
   def matchOthersVelocity(boids: Seq[Boid], boid: Boid) = {
-    val l = boids.filter(b => b != boid).map(_.velocity).fold(Vector2D.zero)((v1, v2) => v1 + v2)
+    val l = boids
+      .filter(b => b != boid)
+      .filter(b => (b.position - boid.position).length < config.nearBoidDistance)
+      .map(_.velocity).fold(Vector2D.zero)((v1, v2) => v1 + v2)
+
     val m = if (boids.size > 1) l.divide(boids.size - 1) else l
-    (m - boid.velocity) / 8
+    (m - boid.velocity)
   }
 
   def tendToPlace(boid: Boid) = {
-    val p = (tendPlace - boid.position) / 100
+    val p = (tendPlace - boid.position)
     if (tend)
       p
     else
@@ -93,37 +98,60 @@ case class Flock(boids: Seq[Boid],
 
   def avoidPlace(place: Vector2D, boid: Boid) = {
     var start = Vector2D.zero
-
-    if ((place - boid.position).norm < separationDistance + 6) {
-      start = start - ((place - boid.position) / 10.0)
+    val distance = (place - boid.position).length
+    if (distance < config.distanceBeetweenBoids) {
+      val diff = place - boid.position
+      start = start - diff.divide((distance))
     }
     start
   }
 
 
   def limitVelocity(velocity: Vector2D) = {
-    if (velocity.norm < minVelocity)
-      (velocity / velocity.norm) * minVelocity else if (velocity.norm > maxVelocity)
-      (velocity / velocity.norm) * maxVelocity
+    if (velocity.length < minVelocity)
+      (velocity / velocity.length) * minVelocity else if (velocity.length > maxVelocity)
+      (velocity / velocity.length) * maxVelocity
     else velocity
+  }
+
+
+  def wrapPosition(position:Vector2D) = {
+    var v = position
+
+    if (position.x < worldSize.minX)
+      v = v.copy(x = worldSize.maxX)
+
+    if (position.x > worldSize.maxX)
+      v = v.copy(x = worldSize.minX)
+
+
+    if (position.y < worldSize.minY)
+      v = v.copy(y = worldSize.maxY)
+
+    if (position.y > worldSize.maxY)
+      v = v.copy(y = worldSize.minY)
+
+    v
   }
 
 
   def boundPosition(position: Vector2D) = {
     var v = position
+    val factor = 0.3
+    var bound = 100
 
-    if (position.x < worldSize.minX + 200)
-      v = v.copy(x = v.x + 1)
+    if (position.x < worldSize.minX + bound)
+      v = v.copy(x = v.x + factor)
 
-    if (position.x > worldSize.maxX - 200)
-      v = v.copy(x = v.x - 1)
+    if (position.x > worldSize.maxX - bound)
+      v = v.copy(x = v.x - factor)
 
 
-    if (position.y < worldSize.minY + 200)
-      v = v.copy(y = v.y + 1)
+    if (position.y < worldSize.minY + bound)
+      v = v.copy(y = v.y + factor)
 
-    if (position.x > worldSize.maxY - 200)
-      v = v.copy(y = v.y - 1)
+    if (position.y > worldSize.maxY - bound)
+      v = v.copy(y = v.y - factor)
 
     v
   }

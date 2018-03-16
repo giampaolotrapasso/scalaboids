@@ -47,22 +47,11 @@ case class Vector2D(x: Double = 0.0, y: Double = 0.0) {
     y = x * Math.sin(angle) + y * Math.cos(angle)
   )
 
-  def norm = Math.sqrt(x * x + y * y)
+  def length = Math.sqrt(x * x + y * y)
 
-  def normalize(normX: Double = 1.0, normY: Double = 1.0) = {
+  def normalize = this.divide(this.length)
 
-    def isNormal(vector2D: Vector2D) = vector2D.x < normX && vector2D.x > -normX && vector2D.y < normY && vector2D.y > -normY
 
-    if (isNormal(this)) {
-      this
-    }
-    else {
-      val xx = this.x % normX
-      val yy = this.y % normY
-
-      copy(x = xx, y = yy)
-    }
-  }
 
 }
 
